@@ -1,0 +1,9 @@
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\bin\Release\Assmodhelper.exe.config
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\bin\Release\Assmodhelper.exe
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\bin\Release\Assmodhelper.pdb
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.Form1.resources
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.Properties.Resources.resources
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.csproj.GenerateResource.cache
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.csproj.CoreCompileInputs.cache
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.exe
+C:\Users\zengjieliang\source\repos\Assmodhelper\Assmodhelper\obj\Release\Assmodhelper.pdb
