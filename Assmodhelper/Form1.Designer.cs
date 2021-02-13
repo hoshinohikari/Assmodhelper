@@ -36,6 +36,8 @@
             this.SaveFilename = new System.Windows.Forms.TextBox();
             this.OutputFile = new System.Windows.Forms.Button();
             this.Save = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // AddAss
@@ -60,12 +62,16 @@
             // 
             // AssList
             // 
+            this.AssList.AllowDrop = true;
             this.AssList.FormattingEnabled = true;
             this.AssList.ItemHeight = 12;
             this.AssList.Location = new System.Drawing.Point(18, 37);
             this.AssList.Name = "AssList";
             this.AssList.Size = new System.Drawing.Size(363, 88);
             this.AssList.TabIndex = 3;
+            this.AssList.SelectedIndexChanged += new System.EventHandler(this.AssList_SelectedIndexChanged);
+            this.AssList.DragDrop += new System.Windows.Forms.DragEventHandler(this.AssList_DragDrop);
+            this.AssList.DragEnter += new System.Windows.Forms.DragEventHandler(this.AssList_DragEnter);
             // 
             // label1
             // 
@@ -112,11 +118,33 @@
             this.Save.UseVisualStyleBackColor = true;
             this.Save.Click += new System.EventHandler(this.Save_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(387, 124);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(43, 23);
+            this.button1.TabIndex = 9;
+            this.button1.Text = "↓";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(387, 95);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(43, 23);
+            this.button2.TabIndex = 10;
+            this.button2.Text = "↑";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(442, 373);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.Save);
             this.Controls.Add(this.OutputFile);
             this.Controls.Add(this.SaveFilename);
@@ -142,6 +170,8 @@
         private System.Windows.Forms.TextBox SaveFilename;
         private System.Windows.Forms.Button OutputFile;
         private System.Windows.Forms.Button Save;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button button2;
     }
 }
 

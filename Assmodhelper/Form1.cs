@@ -29,16 +29,16 @@ namespace Assmodhelper
                 Multiselect = true
             };
 
-            if (openFileDialog1.ShowDialog() == DialogResult.OK)
-                try
-                {
-                    foreach (var i in openFileDialog1.FileNames) AssList.Items.Add(i);
-                }
-                catch (SecurityException ex)
-                {
-                    MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
-                                    $"Details:\n\n{ex.StackTrace}");
-                }
+            if (openFileDialog1.ShowDialog() != DialogResult.OK) return;
+            try
+            {
+                foreach (var i in openFileDialog1.FileNames) AssList.Items.Add(i);
+            }
+            catch (SecurityException ex)
+            {
+                MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
+                                $"Details:\n\n{ex.StackTrace}");
+            }
         }
 
         private void DelAss_Click(object sender, EventArgs e)
@@ -56,22 +56,21 @@ namespace Assmodhelper
                 Title = @"Open text file"
             };
 
-            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-                try
-                {
-                    var filePath = saveFileDialog1.FileName;
-                    SaveFilename.Text = filePath;
-                }
-                catch (SecurityException ex)
-                {
-                    MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
-                                    $"Details:\n\n{ex.StackTrace}");
-                }
+            if (saveFileDialog1.ShowDialog() != DialogResult.OK) return;
+            try
+            {
+                var filePath = saveFileDialog1.FileName;
+                SaveFilename.Text = filePath;
+            }
+            catch (SecurityException ex)
+            {
+                MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
+                                $"Details:\n\n{ex.StackTrace}");
+            }
         }
 
-        private void SaveAss(ArrayList assList, string savename)
+        private static void SaveAss(IList assList, string savename)
         {
-            string line;
             var info = new ArrayList();
             var styles = new ArrayList();
             var Event = new ArrayList();
@@ -79,6 +78,7 @@ namespace Assmodhelper
             foreach (var i in assList)
             {
                 var file1 = new StreamReader(i.ToString());
+                string line;
                 if (assList.IndexOf(i) == 0)
                     while ((line = file1.ReadLine()) != "[V4+ Styles]")
                         info.Add(line);
@@ -97,7 +97,10 @@ namespace Assmodhelper
 
                 file1.ReadLine();
                 while ((line = file1.ReadLine()) != null)
+                {
+                    if (line == "") continue;
                     Event.Add(line.Insert(line.IndexOf(',', 34), '-' + assList.IndexOf(i).ToString()));
+                }
             }
 
             using (var file2 =
@@ -121,6 +124,55 @@ namespace Assmodhelper
             foreach (var i in AssList.Items) assList.Add(i);
             SaveAss(assList, SaveFilename.Text);
             MessageBox.Show(@"success!");
+        }
+
+        private void AssList_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        }
+
+        private void AssList_DragDrop(object sender, DragEventArgs e)
+        {
+            var fileNames = (string[]) e.Data.GetData(DataFormats.FileDrop);
+            foreach (var t in fileNames)
+                AssList.Items.Add(t);
+        }
+
+        private void AssList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (AssList.Items.Count == 1)
+                return;
+            if (AssList.SelectedIndex == 0)
+            {
+                button2.Enabled = false;
+                button1.Enabled = true;
+            }
+            else if (AssList.SelectedIndex == AssList.Items.Count - 1)
+            {
+                button1.Enabled = false;
+                button2.Enabled = true;
+            }
+            else
+            {
+                button1.Enabled = true;
+                button2.Enabled = true;
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var tem = AssList.SelectedItem;
+            AssList.Items[AssList.SelectedIndex] = AssList.Items[AssList.SelectedIndex - 1];
+            AssList.Items[AssList.SelectedIndex - 1] = tem;
+            AssList.SelectedIndex--;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var tem = AssList.SelectedItem;
+            AssList.Items[AssList.SelectedIndex] = AssList.Items[AssList.SelectedIndex + 1];
+            AssList.Items[AssList.SelectedIndex + 1] = tem;
+            AssList.SelectedIndex++;
         }
     }
 }
