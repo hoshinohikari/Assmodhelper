@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Drawing;
 using System.IO;
 using System.Security;
 using System.Text;
@@ -9,9 +10,23 @@ namespace Assmodhelper
 {
     public partial class Form1 : Form
     {
+        private readonly Timer _assHoverTimer;
+        private readonly ToolTip _assToolTip;
+        private int _assHoverIndex = -1;
+        private Point _assHoverPoint;
+
         public Form1()
         {
             InitializeComponent();
+            _assToolTip = new ToolTip
+            {
+                AutoPopDelay = int.MaxValue,
+                InitialDelay = 0,
+                ReshowDelay = 0,
+                ShowAlways = true
+            };
+            _assHoverTimer = new Timer { Interval = 2000 };
+            _assHoverTimer.Tick += AssHoverTimer_Tick;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -36,8 +51,13 @@ namespace Assmodhelper
             }
             catch (SecurityException ex)
             {
-                MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
-                                $"Details:\n\n{ex.StackTrace}");
+                MessageBox.Show($@"Security error.
+
+Error message: {ex.Message}
+
+Details:
+
+{ex.StackTrace}");
             }
         }
 
@@ -64,21 +84,27 @@ namespace Assmodhelper
             }
             catch (SecurityException ex)
             {
-                MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
-                                $"Details:\n\n{ex.StackTrace}");
+                MessageBox.Show($@"Security error.
+
+Error message: {ex.Message}
+
+Details:
+
+{ex.StackTrace}");
             }
         }
 
-        private static bool SaveAss(IList assList, string savename)
+        private static bool SaveAss(IList assList, string saveName)
         {
             if (assList == null || assList.Count == 0)
             {
-                MessageBox.Show("未选择需要合并的字幕文件。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(@"未选择需要合并的字幕文件。", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
-            if (string.IsNullOrWhiteSpace(savename))
+
+            if (string.IsNullOrWhiteSpace(saveName))
             {
-                MessageBox.Show("输出文件路径不能为空。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(@"输出文件路径不能为空。", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
 
@@ -92,7 +118,7 @@ namespace Assmodhelper
                 var path = i?.ToString();
                 if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
                 {
-                    MessageBox.Show($"字幕文件不存在: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($@"字幕文件不存在: {path}", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
 
@@ -100,14 +126,13 @@ namespace Assmodhelper
                 {
                     if (file1.Peek() == -1)
                     {
-                        MessageBox.Show($"字幕文件为空: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($@"字幕文件为空: {path}", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return false;
                     }
 
                     string line;
                     var foundStyles = false;
                     if (assIndex == 0)
-                    {
                         while ((line = file1.ReadLine()) != null)
                         {
                             if (line == "[V4+ Styles]")
@@ -115,31 +140,28 @@ namespace Assmodhelper
                                 foundStyles = true;
                                 break;
                             }
+
                             info.Add(line);
                         }
-                    }
                     else
-                    {
                         while ((line = file1.ReadLine()) != null)
-                        {
                             if (line == "[V4+ Styles]")
                             {
                                 foundStyles = true;
                                 break;
                             }
-                        }
-                    }
 
                     if (!foundStyles)
                     {
-                        MessageBox.Show($"缺少样式区段 [V4+ Styles]: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($@"缺少样式区段 [V4+ Styles]: {path}", @"错误", MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
                         return false;
                     }
 
                     // 跳过样式格式行
                     if (file1.ReadLine() == null)
                     {
-                        MessageBox.Show($"样式格式行缺失: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($@"样式格式行缺失: {path}", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return false;
                     }
 
@@ -151,6 +173,7 @@ namespace Assmodhelper
                             foundEvents = true;
                             break;
                         }
+
                         if (string.IsNullOrWhiteSpace(line))
                             continue;
                         var commaIndex = line.IndexOf(',');
@@ -161,16 +184,17 @@ namespace Assmodhelper
 
                     if (!foundEvents)
                     {
-                        MessageBox.Show($"缺少事件区段 [Events]: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($@"缺少事件区段 [Events]: {path}", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return false;
                     }
 
                     // 跳过事件格式行
                     if (file1.ReadLine() == null)
                     {
-                        MessageBox.Show($"事件格式行缺失: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($@"事件格式行缺失: {path}", @"错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return false;
                     }
+
                     while ((line = file1.ReadLine()) != null)
                     {
                         if (string.IsNullOrWhiteSpace(line))
@@ -186,7 +210,7 @@ namespace Assmodhelper
             }
 
             using (var file2 =
-                new StreamWriter(savename, false, Encoding.UTF8))
+                   new StreamWriter(saveName, false, Encoding.UTF8))
             {
                 foreach (var i in info) file2.WriteLine(i);
                 file2.WriteLine("[V4+ Styles]");
@@ -213,7 +237,7 @@ namespace Assmodhelper
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存失败: {ex.Message}");
+                MessageBox.Show($@"保存失败: {ex.Message}");
             }
         }
 
@@ -224,7 +248,7 @@ namespace Assmodhelper
 
         private void AssList_DragDrop(object sender, DragEventArgs e)
         {
-            var fileNames = (string[]) e.Data.GetData(DataFormats.FileDrop);
+            var fileNames = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (var t in fileNames)
             {
                 if (!string.Equals(Path.GetExtension(t), ".ass", StringComparison.OrdinalIgnoreCase))
@@ -252,6 +276,46 @@ namespace Assmodhelper
                 button1.Enabled = true;
                 button2.Enabled = true;
             }
+        }
+
+        private void AssList_MouseMove(object sender, MouseEventArgs e)
+        {
+            var index = AssList.IndexFromPoint(e.Location);
+            if (index != _assHoverIndex)
+            {
+                _assHoverIndex = index;
+                _assHoverPoint = e.Location;
+                _assHoverTimer.Stop();
+                _assToolTip.Hide(AssList);
+                if (_assHoverIndex >= 0)
+                    _assHoverTimer.Start();
+            }
+            else
+            {
+                _assHoverPoint = e.Location;
+            }
+        }
+
+        private void AssList_MouseLeave(object sender, EventArgs e)
+        {
+            _assHoverTimer.Stop();
+            _assToolTip.Hide(AssList);
+            _assHoverIndex = -1;
+        }
+
+        private void AssHoverTimer_Tick(object sender, EventArgs e)
+        {
+            _assHoverTimer.Stop();
+            if (_assHoverIndex < 0 || _assHoverIndex >= AssList.Items.Count)
+                return;
+
+            var path = AssList.Items[_assHoverIndex]?.ToString();
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            var tooltipText = $"{path}";
+            var showPoint = new Point(_assHoverPoint.X + 15, _assHoverPoint.Y + 15);
+            _assToolTip.Show(tooltipText, AssList, showPoint);
         }
 
         private void button2_Click(object sender, EventArgs e)

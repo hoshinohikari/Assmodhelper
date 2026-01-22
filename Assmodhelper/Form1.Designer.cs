@@ -72,6 +72,8 @@
             this.AssList.SelectedIndexChanged += new System.EventHandler(this.AssList_SelectedIndexChanged);
             this.AssList.DragDrop += new System.Windows.Forms.DragEventHandler(this.AssList_DragDrop);
             this.AssList.DragEnter += new System.Windows.Forms.DragEventHandler(this.AssList_DragEnter);
+            this.AssList.MouseLeave += new System.EventHandler(this.AssList_MouseLeave);
+            this.AssList.MouseMove += new System.Windows.Forms.MouseEventHandler(this.AssList_MouseMove);
             // 
             // label1
             // 
