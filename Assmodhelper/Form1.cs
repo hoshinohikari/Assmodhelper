@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using System.Security;
@@ -69,38 +69,120 @@ namespace Assmodhelper
             }
         }
 
-        private static void SaveAss(IList assList, string savename)
+        private static bool SaveAss(IList assList, string savename)
         {
+            if (assList == null || assList.Count == 0)
+            {
+                MessageBox.Show("未选择需要合并的字幕文件。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(savename))
+            {
+                MessageBox.Show("输出文件路径不能为空。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
             var info = new ArrayList();
             var styles = new ArrayList();
-            var Event = new ArrayList();
+            var events = new ArrayList();
 
+            var assIndex = 0;
             foreach (var i in assList)
             {
-                var file1 = new StreamReader(i.ToString());
-                string line;
-                if (assList.IndexOf(i) == 0)
-                    while ((line = file1.ReadLine()) != "[V4+ Styles]")
-                        info.Add(line);
-                else
-                    while (file1.ReadLine() != "[V4+ Styles]")
+                var path = i?.ToString();
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                {
+                    MessageBox.Show($"字幕文件不存在: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+
+                using (var file1 = new StreamReader(path))
+                {
+                    if (file1.Peek() == -1)
                     {
+                        MessageBox.Show($"字幕文件为空: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
                     }
 
-                file1.ReadLine();
-                while ((line = file1.ReadLine()) != "[Events]")
-                {
-                    if (line == "")
-                        continue;
-                    if (line != null) styles.Add(line.Insert(line.IndexOf(','), '-' + assList.IndexOf(i).ToString()));
+                    string line;
+                    var foundStyles = false;
+                    if (assIndex == 0)
+                    {
+                        while ((line = file1.ReadLine()) != null)
+                        {
+                            if (line == "[V4+ Styles]")
+                            {
+                                foundStyles = true;
+                                break;
+                            }
+                            info.Add(line);
+                        }
+                    }
+                    else
+                    {
+                        while ((line = file1.ReadLine()) != null)
+                        {
+                            if (line == "[V4+ Styles]")
+                            {
+                                foundStyles = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!foundStyles)
+                    {
+                        MessageBox.Show($"缺少样式区段 [V4+ Styles]: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
+                    }
+
+                    // 跳过样式格式行
+                    if (file1.ReadLine() == null)
+                    {
+                        MessageBox.Show($"样式格式行缺失: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
+                    }
+
+                    var foundEvents = false;
+                    while ((line = file1.ReadLine()) != null)
+                    {
+                        if (line == "[Events]")
+                        {
+                            foundEvents = true;
+                            break;
+                        }
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+                        var commaIndex = line.IndexOf(',');
+                        styles.Add(commaIndex > 0
+                            ? line.Insert(commaIndex, '-' + assIndex.ToString())
+                            : line);
+                    }
+
+                    if (!foundEvents)
+                    {
+                        MessageBox.Show($"缺少事件区段 [Events]: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
+                    }
+
+                    // 跳过事件格式行
+                    if (file1.ReadLine() == null)
+                    {
+                        MessageBox.Show($"事件格式行缺失: {path}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return false;
+                    }
+                    while ((line = file1.ReadLine()) != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+                        var commaIndex = line.IndexOf(',', 34);
+                        events.Add(commaIndex > 0
+                            ? line.Insert(commaIndex, '-' + assIndex.ToString())
+                            : line);
+                    }
                 }
 
-                file1.ReadLine();
-                while ((line = file1.ReadLine()) != null)
-                {
-                    if (line == "") continue;
-                    Event.Add(line.Insert(line.IndexOf(',', 34), '-' + assList.IndexOf(i).ToString()));
-                }
+                assIndex++;
             }
 
             using (var file2 =
@@ -114,16 +196,25 @@ namespace Assmodhelper
                 file2.WriteLine("");
                 file2.WriteLine("[Events]");
                 file2.WriteLine("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text");
-                foreach (var i in Event) file2.WriteLine(i);
+                foreach (var i in events) file2.WriteLine(i);
             }
+
+            return true;
         }
 
         private void Save_Click(object sender, EventArgs e)
         {
             var assList = new ArrayList();
             foreach (var i in AssList.Items) assList.Add(i);
-            SaveAss(assList, SaveFilename.Text);
-            MessageBox.Show(@"success!");
+            try
+            {
+                if (SaveAss(assList, SaveFilename.Text))
+                    MessageBox.Show(@"success!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"保存失败: {ex.Message}");
+            }
         }
 
         private void AssList_DragEnter(object sender, DragEventArgs e)
@@ -135,7 +226,11 @@ namespace Assmodhelper
         {
             var fileNames = (string[]) e.Data.GetData(DataFormats.FileDrop);
             foreach (var t in fileNames)
+            {
+                if (!string.Equals(Path.GetExtension(t), ".ass", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 AssList.Items.Add(t);
+            }
         }
 
         private void AssList_SelectedIndexChanged(object sender, EventArgs e)
@@ -161,6 +256,8 @@ namespace Assmodhelper
 
         private void button2_Click(object sender, EventArgs e)
         {
+            if (AssList.SelectedIndex <= 0)
+                return;
             var tem = AssList.SelectedItem;
             AssList.Items[AssList.SelectedIndex] = AssList.Items[AssList.SelectedIndex - 1];
             AssList.Items[AssList.SelectedIndex - 1] = tem;
@@ -169,6 +266,8 @@ namespace Assmodhelper
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (AssList.SelectedIndex < 0 || AssList.SelectedIndex >= AssList.Items.Count - 1)
+                return;
             var tem = AssList.SelectedItem;
             AssList.Items[AssList.SelectedIndex] = AssList.Items[AssList.SelectedIndex + 1];
             AssList.Items[AssList.SelectedIndex + 1] = tem;
