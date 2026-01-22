@@ -1,0 +1,30 @@
+name: .NET Framework Build
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5.1.0
+
+      - name: Restore
+        run: dotnet restore Assmodhelper.sln
+
+      - name: Build
+        run: dotnet build Assmodhelper.sln --configuration Release -p:Platform="Any CPU"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: Assmodhelper-Release
+          path: Assmodhelper\bin\Release\
